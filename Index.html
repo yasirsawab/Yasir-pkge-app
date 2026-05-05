@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Insaf Mobile Center</title>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<style>
+body{margin:0;font-family:Arial;background:#ffd400;color:black;}
+.hidden{display:none !important;}
+.header-black { background: #000; color: #fff; padding: 20px 10px; text-align: center; position: relative; }
+.chopa-urdu { font-size: 26px; color: #ffd400; margin: 0; }
+.logout-btn { position: absolute; top: 10px; right: 10px; background: red; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+.bigBtn{width:95%;padding:15px;background:#000;color:white;border:none;border-radius:10px;font-weight:bold;font-size:16px;cursor:pointer; margin: 10px auto; display: block;}
+.section-box { background: #fff; margin: 10px; padding: 15px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+.pkg-card { background: #f1f1f1; border: 1px solid #ddd; padding: 12px; margin-bottom: 10px; border-radius: 10px; text-align: left; }
+.admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
+.grid-item { background: #000; color: #fff; padding: 20px 10px; border-radius: 12px; text-align: center; font-weight: bold; cursor: pointer; }
+table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top:10px;}
+th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+.copy-btn { background: #000; color: #ffd400; border: none; padding: 5px 10px; border-radius: 5px; font-size: 10px; cursor: pointer; margin-left: 5px; }
+input, select { width: 95%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; }
+.status-pending { color: orange; font-weight: bold; }
+.status-approved { color: green; font-weight: bold; }
+.status-rejected { color: red; font-weight: bold; }
+
+/* --- Slider Custom CSS --- */
+.insaf-slider-container {
+    width: 92%;
+    margin: 15px auto;
+    background: linear-gradient(145deg, #FFD700, #DAA520); 
+    border: 3px solid #1a1a1a;
+    border-radius: 15px;
+    overflow: hidden;
+    direction: rtl;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+.insaf-slide {
+    display: none;
+    padding: 25px 15px;
+    text-align: center;
+    min-height: 140px;
+}
+.insaf-active { display: block !important; animation: insafFade 0.8s; }
+@keyframes insafFade { from {opacity: 0.4} to {opacity: 1} }
+.insaf-title { font-size: 20px; font-weight: bold; color: #000; margin-bottom: 8px; }
+.insaf-desc { font-size: 16px; line-height: 1.6; color: #1a1a1a; font-weight: 600; }
+.insaf-highlight { background: #000; color: #FFD700; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+.insaf-shukriya { font-size: 18px; font-weight: bold; color: #d32f2f; margin-top: 10px; display: block; }
+#imgModal { display: none; position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); text-align: center; }
+#modalImg { max-width: 90%; max-height: 80%; margin-top: 50px; border: 5px solid white; border-radius: 10px; }
+.closeBtn { color: white; font-size: 40px; position: absolute; right: 20px; top: 10px; cursor: pointer; }
+
+/* WhatsApp Floating Button CSS */
+.whatsapp-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #25D366;
+    color: white;
+    border-radius: 50px;
+    text-align: center;
+    padding: 12px 20px;
+    font-weight: bold;
+    font-size: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    text-decoration: none;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: Arial, sans-serif;
+}
+.whatsapp-btn:hover {
+    background-color: #128C7E;
+}
+</style>
+</head>
+<body>
+<div id="imgModal">
+    <span class="closeBtn" onclick="closeImg()">&times;</span>
+    <img id="modalImg" onclick="closeImg()">
+</div>
+
+<div id="loginPage" class="section-box" style="margin-top:50px; text-align:center;">
+    <h1>انصاف موبائل سنٹر بدرگہ</h1>
+    <h1> Login Account </h1>
+    <input id="loginUser" placeholder="Enter Username">
+    <input id="loginPass" type="password" placeholder="Password">
+    <button class="bigBtn" onclick="login()">LOGIN</button>
+    <p style="margin-top:10px;">Don't have an account?</p>
+    <button onclick="toggleAuth('signup')" style="background:none; border:none; color:blue; font-weight:bold; cursor:pointer;">SIGN UP HERE</button>
+</div>
+
+<div id="signupPage" class="section-box hidden" style="margin-top:50px; text-align:center;">
+    <h1>انصاف موبائل سنٹر بدرگہ </h1>
+    <h1>Create Account</h1>
+    <input id="regUser" placeholder="Choose Username">
+    <input id="regPass" type="password" placeholder="Create Password">
+    <button class="bigBtn" style="background: green;" onclick="signup()">SIGN UP</button>
+    <p style="margin-top:10px;">Already have an account?</p>
+    <button onclick="toggleAuth('login')" style="background:none; border:none; color:blue; font-weight:bold; cursor:pointer;">BACK TO LOGIN</button>
+</div>
+
+<div id="userPage" class="hidden">
+    <div class="header-black"><h1 class="chopa-urdu"> انصاف موبائل سنٹر بدرگہ</h1><button class="logout-btn" onclick="logout()">Logout</button></div>
+    
+    <div style="background:#222; padding:10px; display:flex; justify-content:space-around; flex-wrap: wrap;">
+        <button onclick="showUserSection('userHome')" style="color:#ffd400; background:none; border:none; font-weight:bold; padding:5px;">Home</button>
+        <button onclick="showUserSection('depositSection')" style="color:#ffd400; background:none; border:none; font-weight:bold; padding:5px;">Deposit</button>
+        <button onclick="showUserSection('ection')" style="color:#ffd400; background:none; border:none; font-weight:bold; padding:5px;">Packages</button>
+        <button onclick="showUserSection('userHistorySection')" style="color:#ffd400; background:none; border:none; font-weight:bold; padding:5px;">History</button>
+        <button onclick="showUserSection('profileSection')" style="color:#ffd400; background:none; border:none; font-weight:bold; padding:5px;">Profile</button>
+    </div>
+
+    <div id="userHome" class="user-content section-box" style="background:#28a745; color:white; text-align:center;">
+        <p>Your Balance</p><h2>Rs <span id="uBal">0.00</span></h2>
+    </div>
+
+    <a href="https://wa.me/923405032202?text=Assalam-o-Alaikum%20Insaf%20Mobile%20Center!%20Mujhe%20madad%20chahye." class="whatsapp-btn" target="_blank">
+        💬 WhatsApp Helpline
+    </a>
+
+    <div id="adminLiveNoteBox" class="section-box hidden" style="background: #ff3333; color: white; border: 2px solid black; border-radius: 10px; text-align: center; font-weight: bold; margin: 10px; padding: 15px; direction: rtl;">
+        <span style="font-size: 18px; text-decoration: underline;">📢 ضروری اعلان / Note:</span>
+        <p id="adminLiveNoteText" style="font-size: 16px; margin: 8px 0 0 0; line-height: 1.5;"></p>
+    </div>
+
+    <div class="insaf-slider-container">
+        <div class="insaf-slide insaf-active">
+            <div class="insaf-title">خوش آمدید! انصاف موبائل سنٹر بدرگہ</div>
+            <div class="insaf-desc">
+                اپنی پسند کا پیکج خریدنے کے لیے اوپر موجود <span class="insaf-highlight">پیکجز</span> بٹن پر کلک کریں، <br>
+                اپنی مرضی کا پیکج منتخب کریں اور بائے (Buy) کریں۔
+            </div>
+            <div class="insaf-shukriya">شکریہ!</div>
+        </div>
+
+        <div class="insaf-slide">
+            <div class="insaf-title">اکاؤنٹ میں بیلنس ڈالنے کا طریقہ</div>
+            <div class="insaf-desc">
+                بیلنس کے لیے <span class="insaf-highlight">ڈپوزٹ (Deposit)</span> آپشن پر کلک کریں، <br>
+                وہاں دیے گئے اکاؤنٹ پر رقم بھیجیں، آپ کا بیلنس 1 منٹ میں آ جائے گا۔
+            </div>
+            <div class="insaf-shukriya">شکریہ!</div>
+        </div>
+
+        <div class="insaf-slide">
+            <div class="insaf-title">اپنی مکمل ہسٹری چیک کریں</div>
+            <div class="insaf-desc">
+                پیکجز کی تفصیل کے لیے <span class="insaf-highlight">پیکج ہسٹری</span> پر کلک کریں <br>
+                اور ڈپازٹ کی تفصیل کے لیے <span class="insaf-highlight">ڈپوزٹ ہسٹری</span> پر کلک کریں۔
+            </div>
+            <div class="insaf-shukriya">شکriya!</div>
+        </div>
+    </div>
+
+    <div id="depositSection" class="user-content hidden section-box">
+        <h3>Add Balance</h3>
+        <select id="depositMethod" onchange="showAccDetails()">
+            <option value="">-- Select Method --</option>
+            <option value="easypaisa">EasyPaisa</option>
+            <option value="jazzcash">JazzCash</option>
+            <option value="digital">Digital Account</option>
+            <option value="ubl">UBL Bank</option>
+        </select>
+        <div id="accInfo" style="background:#eee; padding:10px; border-radius:8px; display:none; margin-bottom:10px;">
+            <p id="accText" style="margin:5px 0; font-weight:bold;"></p>
+            <button class="copy-btn" onclick="copyAcc()">Copy Number</button>
+        </div>
+        <input type="number" id="depAmt" placeholder="Enter Amount">
+        <input type="text" id="depTid" placeholder="Transaction ID (TID)">
+        <input type="file" id="depProof" accept="image/*">
+        <button class="bigBtn" style="background:green;" onclick="submitDeposit()">Submit Request</button>
+    </div>
+
+    <div id="ection" class="user-content hidden section-box">
+        <h3>Select Network</h3>
+        <select id="networkSelect" onchange="display()">
+            <option value="">-- Choose Network --</option>
+            <option value="zong">ZONG</option><option value="telenor">TELENOR</option><option value="ufone">UFONE</option><option value="jazz">JAZZ</option>
+        </select>
+        <div id="pkgDisplay"></div>
+    </div>
+
+    <div id="userHistorySection" class="user-content hidden section-box">
+        <div style="display: flex; gap: 5px;">
+            <button class="bigBtn" style="font-size: 11px; padding: 10px;" onclick="loadUserDepHistory()">Deposit History</button>
+            <button class="bigBtn" style="font-size: 11px; padding: 10px;" onclick="loadUserPkgHistory()">Pkg History</button>
+        </div>
+        <div id="historyDisplayArea"></div>
+    </div>
+
+    <div id="profileSection" class="user-content hidden section-box">
+        <h3>Profile</h3><p>User: <span id="pName"></span></p><p>Pass: <span id="pPass"></span></p>
+    </div>
+</div>
+
+<div id="adminPage" class="hidden">
+    <div class="header-black"><h1>Admin Panel</h1><button class="logout-btn" onclick="logout()">Logout</button></div>
+    <div id="adminMenu" class="admin-grid">
+        <div class="grid-item" onclick="showAdminSection('adminDepReq')">💰 Deposits</div>
+        <div class="grid-item" onclick="showAdminSection('adminq')">📦 Pkg Requests</div>
+        <div class="grid-item" onclick="showAdminSection('adminUsers')">👥 Manage Users</div>
+        <div class="grid-item" onclick="showAdminSection('adminPkgEditor')">✏️ Edit Packages</div>
+        <div class="grid-item" onclick="showAdminSection('adminNoteEditor')">📢 Edit Note/Announce</div>
+        <div class="grid-item" onclick="showAdminSection('adminHistory')">📅 History</div>
+    </div>
+
+    <div id="adminNoteEditor" class="section-box hidden">
+        <h3>Live Note Editor</h3>
+        <p>Yahan likha hua note user ki home screen par laal patti mein live show hoga.</p>
+        <input id="adminLiveNoteInput" placeholder="Yahan apna Note/Urdu elaan likhein...">
+        <button class="bigBtn" style="background: green;" onclick="saveAdminNote()">📢 Publish Note</button>
+        <button class="bigBtn" style="background: red;" onclick="deleteAdminNote()">❌ Delete Note</button>
+        <button class="bigBtn" onclick="backToAdmin()">Back</button>
+    </div>
+
+    <div id="adminUsers" class="section-box hidden">
+        <h3>Users List</h3>
+        <table id="userTable"><thead><tr><th>User/Pass</th><th>Bal</th><th>Action</th></tr></thead><tbody id="userTableBody"></tbody></table>
+        <button class="bigBtn" onclick="backToAdmin()">Back</button>
+    </div>
+
+    <div id="adminPkgEditor" class="section-box hidden">
+        <h3>Add/Edit Packages</h3>
+        <select id="editNetSelect" onchange="loadEditor()"><option value="zong">ZONG</option><option value="telenor">TELENOR</option><option value="ufone">UFONE</option><option value="jazz">JAZZ</option></select>
+        <input id="newPkgName" placeholder="Package Name">
+        <input id="newPkgPrice" type="number" placeholder="Price">
+        <input id="newPkgDesc" placeholder="Description">
+        <button class="bigBtn" style="background:green;" onclick="addNewPackage()">Add New Package</button>
+        <hr>
+        <div id="editorPkgList"></div>
+        <button class="bigBtn" onclick="backToAdmin()">Back</button>
+    </div>
+
+    <div id="adminDepReq" class="section-box hidden">
+        <h3>Deposit Requests</h3>
+        <table><thead><tr><th>User</th><th>Amt/TID</th><th>Proof</th><th>Action</th></tr></thead><tbody id="depTableBody"></tbody></table>
+        <button class="bigBtn" onclick="backToAdmin()">Back</button>
+    </div>
+
+    <div id="adminq" class="section-box hidden">
+        <h3>Package Requests</h3>
+        <table><thead><tr><th>User</th><th>Target No</th><th>Package</th><th>Action</th></tr></thead><tbody id="pkgTableBody"></tbody></table>
+        <button class="bigBtn" onclick="backToAdmin()">Back</button>
+    </div>
+
+    <div id="adminHistory" class="section-box hidden">
+        <h3>Full History</h3>
+        <table><thead><tr><th>User</th><th>Type</th><th>Amt</th><th>Status</th></tr></thead><tbody id="historyBody"></tbody></table>
+        <button class="bigBtn" onclick="backToAdmin()">Back</button>
+    </div>
+</div>
+
+<script>
+// --- FIREBASE CONFIGURATION ---
+const firebaseConfig = {
+  apiKey: "AIzaSyDDG3q8Mhdzsm3wPWXopXobBweRDK5nSCw",
+  authDomain: "insaf-mobile-pakge.firebaseapp.com",
+  databaseURL: "https://insaf-mobile-pakge-default-rtdb.firebaseio.com",
+  projectId: "insaf-mobile-pakge",
+  storageBucket: "insaf-mobile-pakge.firebasestorage.app",
+  messagingSenderId: "57226372845",
+  appId: "1:57226372845:web:d62552bce343064d8f0ee4",
+  measurementId: "G-V1KZYL9MPS"
+};
+
+// Initialize Firebase Realtime Database
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+// --- STATE VARIABLES ---
+let currentUser = "";
+let blockedUsers = [];
+let all = {
+    zong: [],
+    telenor: [],
+    ufone: [],
+    jazz: []
+};
+
+const accData = {
+    easypaisa: { num: "03423266843", name: "Anwar Shah" },
+    jazzcash: { num: "03449164372", name: "Anwar Shah" },
+    digital: { num: "93440587", name: "Yasir Khan" },
+    ubl: { num: "0059311913134", name: "Yasir Khan" }
+};
+
+// --- INITIAL DATA SYNC FROM FIREBASE ---
+// Live Sync Packages (Database se load aur auto-seed)
+database.ref('packages').on('value', (snapshot) => {
+    if (snapshot.exists()) {
+        all = snapshot.val();
+    } else {
+        all = {
+            zong: [{name:"Family 5 User", price:1250, desc:"200GB Net, 20k Mins"}],
+            telenor: [{name:"Weekly Extreme", price:500, desc:"15GB, 5000 Mins"}],
+            ufone: [{name:"Family 5 User", price:1100, desc:"200GB, 20k Mins"}],
+            jazz: [{name:"Family 5 User", price:1250, desc:"2000GB, 20k Mins"}]
+        };
+        database.ref('packages').set(all);
+    }
+    display();
+    loadEditor();
+});
+
+// Live Sync Admin Note (Elaan/Notes)
+database.ref('adminNote').on('value', (snapshot) => {
+    let noteBox = document.getElementById("adminLiveNoteBox");
+    let noteText = document.getElementById("adminLiveNoteText");
+    let noteInput = document.getElementById("adminLiveNoteInput");
+    
+    if (snapshot.exists() && snapshot.val().trim() !== "") {
+        let note = snapshot.val();
+        noteText.innerText = note;
+        noteInput.value = note;
+        noteBox.classList.remove("hidden");
+    } else {
+        noteText.innerText = "";
+        noteInput.value = "";
+        noteBox.classList.add("hidden");
+    }
+});
+
+// Live Sync Blocked Users
+database.ref('blockedUsers').on('value', (snapshot) => {
+    blockedUsers = snapshot.val() || [];
+});
+
+// --- SLIDER LOGIC ---
+let sliderRunning = false;
+let insafIdx = 0;
+
+function runInsafSlider() {
+    if (sliderRunning) return;
+    sliderRunning = true;
+    
+    let slides = document.getElementsByClassName("insaf-slide");
+    if (slides.length === 0) {
+        sliderRunning = false;
+        return;
+    }
+
+    function next() {
+        for (let i = 0; i < slides.length; i++) {
+            slides[i].style.display = "none";
+            slides[i].classList.remove("insaf-active");
+        }
+        insafIdx++;
+        if (insafIdx > slides.length) insafIdx = 1;
+        
+        if (slides[insafIdx - 1]) {
+            slides[insafIdx - 1].style.display = "block";
+            slides[insafIdx - 1].classList.add("insaf-active");
+        }
+        setTimeout(next, 5000);
+    }
+    next();
+}
+
+// --- AUTHENTICATION ---
+function toggleAuth(mode) {
+    if(mode === 'signup') {
+        document.getElementById("loginPage").classList.add("hidden");
+        document.getElementById("signupPage").classList.remove("hidden");
+    } else {
+        document.getElementById("signupPage").classList.add("hidden");
+        document.getElementById("loginPage").classList.remove("hidden");
+    }
+}
+
+function signup() {
+    let u = document.getElementById("regUser").value.trim();
+    let p = document.getElementById("regPass").value.trim();
+    if(u.length < 3) return alert("Username must be at least 3 characters.");
+    if(p.length < 4) return alert("Password must be at least 4 characters.");
+
+    database.ref('users/' + u).once('value').then((snapshot) => {
+        if(snapshot.exists()) {
+            alert("Username already taken!");
+        } else {
+            let currentTime = Date.now();
+            database.ref('users/' + u).set({
+                password: p,
+                balance: 0.00,
+                createdAt: currentTime
+            }).then(() => {
+                alert("Account Created!");
+                toggleAuth('login');
+            }).catch(err => alert("Error: " + err.message));
+        }
+    });
+}
+
+function login() {
+    let u = document.getElementById("loginUser").value.trim();
+    let p = document.getElementById("loginPass").value.trim();
+    
+    if(u === "Admin" && p === "Admin@1234") { 
+        document.getElementById("loginPage").classList.add("hidden"); 
+        document.getElementById("adminPage").classList.remove("hidden"); 
+        loadAdminData();
+        return; 
+    }
+    
+    if(blockedUsers.includes(u)) return alert("Account Blocked!");
+
+    database.ref('users/' + u).once('value').then((snapshot) => {
+        if (snapshot.exists()) {
+            let userData = snapshot.val();
+            let userBalance = userData.balance || 0;
+            let userPassword = userData.password;
+            let accountCreatedTime = userData.createdAt || Date.now();
+
+            // Auto-Delete Logic: 1 din baad account delete agar balance Rs 50 se kam ho
+            let oneDayInMs = 24 * 60 * 60 * 1000;
+            let timeDifference = Date.now() - accountCreatedTime;
+
+            if (userBalance < 50 && timeDifference >= oneDayInMs) {
+                database.ref('users/' + u).remove().then(() => {
+                    alert("Aapka account Rs 50 se kam balance hone ki wajah se delete ho chuka hai!");
+                });
+                return;
+            }
+
+            if (userPassword === p) { 
+                currentUser = u; 
+                document.getElementById("loginPage").classList.add("hidden"); 
+                document.getElementById("userPage").classList.remove("hidden"); 
+                
+                // Real-time listener for current user's balance
+                database.ref('users/' + currentUser).on('value', (snap) => {
+                    if(snap.exists()) {
+                        let activeData = snap.val();
+                        document.getElementById("uBal").innerText = Number(activeData.balance || 0).toFixed(2);
+                        document.getElementById("pName").innerText = currentUser;
+                        document.getElementById("pPass").innerText = activeData.password;
+                    }
+                });
+                
+                runInsafSlider();
+            } else { 
+                alert("Invalid Credentials!"); 
+            }
+        } else {
+            alert("User nahi mila!");
+        }
+    }).catch(err => alert("Database Error: " + err.message));
+}
+
+function logout() { location.reload(); }
+
+function showUserSection(id) {
+    document.querySelectorAll('.user-content').forEach(s => s.classList.add("hidden"));
+    document.getElementById(id).classList.remove("hidden");
+}
+
+function updateUserUI() {
+    database.ref('users/' + currentUser).once('value').then((snapshot) => {
+        if(snapshot.exists()) {
+            let bVal = snapshot.val().balance || 0;
+            document.getElementById("uBal").innerText = Number(bVal).toFixed(2);
+            document.getElementById("pName").innerText = currentUser;
+            document.getElementById("pPass").innerText = snapshot.val().password;
+        }
+    });
+}
+
+// --- USER INTERFACE FUNCTIONS ---
+function showAccDetails() {
+    let method = document.getElementById("depositMethod").value;
+    let info = document.getElementById("accInfo");
+    if(!method) { info.style.display="none"; return; }
+    info.style.display="block";
+    document.getElementById("accText").innerText = `${accData[method].name}: ${accData[method].num}`;
+}
+
+function copyAcc() {
+    let method = document.getElementById("depositMethod").value;
+    navigator.clipboard.writeText(accData[method].num);
+    alert("Number Copied!");
+}
+
+function submitDeposit() {
+    let amtInput = document.getElementById("depAmt");
+    let tidInput = document.getElementById("depTid");
+    let fileInput = document.getElementById("depProof");
+    
+    let amt = parseInt(amtInput.value);
+    let tid = tidInput.value.trim();
+    let file = fileInput.files[0];
+
+    if(!amt || !tid || !file) {
+        return alert("Please fill all details and select proof image!");
+    }
+    if(!currentUser) {
+        return alert("Error: Please login again!");
+    }
+
+    let reader = new FileReader();
+    reader.onload = function(e) {
+        let newest = {
+            user: currentUser, 
+            amount: amt, 
+            tid: tid, 
+            proof: e.target.result, 
+            status: "Pending",
+            timestamp: Date.now()
+        };
+        
+        database.ref('deposits').push(newest).then(() => {
+            alert("Deposit Request Sent Successfully!");
+            amtInput.value = ""; 
+            tidInput.value = ""; 
+            fileInput.value = "";
+        }).catch(err => alert("Error: " + err.message));
+    };
+    reader.readAsDataURL(file);
+}
+
+function display() {
+    const net = document.getElementById("networkSelect").value;
+    const container = document.getElementById("pkgDisplay");
+    container.innerHTML = "";
+    if(!net || !all[net]) return;
+    all[net].forEach((p, idx) => {
+        container.innerHTML += `<div class="pkg-card">
+            <button onclick="estBuy('${p.name}', ${p.price})" style="float:right; background:green; color:white; border:none; padding:8px; border-radius:5px;">BUY</button>
+            <strong>${p.name}</strong><br><small>${p.desc}</small><br><b>Rs ${p.price}</b>
+        </div>`;
+    });
+}
+
+function estBuy(name, price) {
+    database.ref('users/' + currentUser).once('value').then((snapshot) => {
+        let uData = snapshot.val();
+        let currentBal = uData.balance || 0;
+        
+        if(currentBal < price) return alert("Low Balance!");
+        
+        let num = prompt("Enter Target Mobile Number:");
+        if(num === null || num.trim() === "") return;
+
+        let newBal = currentBal - price;
+        
+        // Save user new balance
+        database.ref('users/' + currentUser + '/balance').set(newBal).then(() => {
+            let pkgReq = {
+                user: currentUser, 
+                target: num, 
+                pkg: name, 
+                amt: price, 
+                status: "Pending",
+                timestamp: Date.now()
+            };
+            
+            database.ref('pkgRequests').push(pkgReq).then(() => {
+                alert("Order Sent!");
+                updateUserUI();
+            });
+        });
+    });
+}
+
+// --- HISTORY VIEWS ---
+function loadUserDepHistory() {
+    let html = "<table><thead><tr><th>Amount</th><th>TID</th><th>Status</th></tr></thead><tbody>";
+    database.ref('deposits').once('value').then((snapshot) => {
+        if(snapshot.exists()) {
+            let data = snapshot.val();
+            Object.values(data).filter(d => d.user === currentUser).reverse().forEach(d => {
+                html += `<tr><td>Rs ${d.amount}</td><td>${d.tid}</td><td class="status-${d.status.toLowerCase()}">${d.status}</td></tr>`;
+            });
+        }
+        document.getElementById("historyDisplayArea").innerHTML = html + "</tbody></table>";
+    });
+}
+
+function loadUserPkgHistory() {
+    let html = "<table><thead><tr><th>Pkg</th><th>No</th><th>Status</th></tr></thead><tbody>";
+    database.ref('pkgRequests').once('value').then((snapshot) => {
+        if(snapshot.exists()) {
+            let data = snapshot.val();
+            Object.values(data).filter(p => p.user === currentUser).reverse().forEach(p => {
+                html += `<tr><td>${p.pkg}</td><td>${p.target}</td><td class="status-${p.status.toLowerCase()}">${p.status}</td></tr>`;
+            });
+        }
+        document.getElementById("historyDisplayArea").innerHTML = html + "</tbody></table>";
+    });
+}
+
+// --- ADMIN SYSTEM FUNCTIONS ---
+function showAdminSection(id) {
+    document.getElementById("adminMenu").classList.add("hidden");
+    document.querySelectorAll('#adminPage .section-box').forEach(s => s.classList.add("hidden"));
+    document.getElementById(id).classList.remove("hidden");
+}
+
+function backToAdmin() {
+    document.querySelectorAll('#adminPage .section-box').forEach(s => s.classList.add("hidden"));
+    document.getElementById("adminMenu").classList.remove("hidden");
+}
+
+function loadAdminData() {
+    loadAdminUsers();
+    loadAdminDeposits();
+    loadAdminPackagesRequests();
+    loadAdminHistory();
+}
+
+function loadAdminUsers() {
+    database.ref('users').on('value', (snapshot) => {
+        let tbody = document.getElementById("userTableBody");
+        tbody.innerHTML = "";
+        if(snapshot.exists()) {
+            let usersData = snapshot.val();
+            for (let uName in usersData) {
+                let uData = usersData[uName];
+                let isBlocked = blockedUsers.includes(uName);
+                let btnBlockText = isBlocked ? "Unblock" : "Block";
+                let btnColor = isBlocked ? "green" : "red";
+                let userBal = Number(uData.balance || 0).toFixed(2);
+                
+                tbody.innerHTML += `<tr>
+                    <td><b>${uName}</b><br><small>${uData.password}</small></td>
+                    <td>Rs ${userBal}</td>
+                    <td>
+                        <button onclick="changeBalance('${uName}')" style="background:#000; color:#ffd400; border:none; padding:5px; margin:2px; border-radius:3px;">Edit Bal</button>
+                        <button onclick="toggleBlockUser('${uName}')" style="background:${btnColor}; color:white; border:none; padding:5px; margin:2px; border-radius:3px;">${btnBlockText}</button>
+                    </td>
+                </tr>`;
+            }
+        }
+    });
+}
+
+function changeBalance(uName) {
+    let amt = prompt("Enter New Balance:");
+    if (amt === null || amt.trim() === "") return;
+    let finalAmt = parseFloat(amt);
+    if (isNaN(finalAmt)) return alert("Please enter valid number!");
+    
+    database.ref('users/' + uName + '/balance').set(finalAmt).then(() => {
+        alert("Balance Updated!");
+    });
+}
+
+function toggleBlockUser(uName) {
+    let idx = blockedUsers.indexOf(uName);
+    if(idx > -1) {
+        blockedUsers.splice(idx, 1);
+    } else {
+        blockedUsers.push(uName);
+    }
+    database.ref('blockedUsers').set(blockedUsers).then(() => {
+        alert("User Status Updated!");
+    });
+}
+
+function loadAdminDeposits() {
+    database.ref('deposits').on('value', (snapshot) => {
+        let tbody = document.getElementById("depTableBody");
+        tbody.innerHTML = "";
+        if(snapshot.exists()) {
+            let depositsData = snapshot.val();
+            for(let key in depositsData) {
+                let d = depositsData[key];
+                if(d.status === "Pending") {
+                    tbody.innerHTML += `<tr>
+                        <td>${d.user}</td>
+                        <td>Rs ${d.amount}<br><small>TID: ${d.tid}</small></td>
+                        <td><img src="${d.proof}" style="width:50px; height:50px; border-radius:5px;" onclick="viewImg('${d.proof}')"></td>
+                        <td>
+                            <button onclick="approveDeposit('${key}', '${d.user}', ${d.amount})" style="background:green; color:white; border:none; padding:5px; border-radius:3px;">Approve</button>
+                            <button onclick="rejectDeposit('${key}')" style="background:red; color:white; border:none; padding:5px; border-radius:3px; margin-top:3px;">Reject</button>
+                        </td>
+                    </tr>`;
+                }
+            }
+        }
+    });
+}
+
+function approveDeposit(key, user, amount) {
+    database.ref('users/' + user).once('value').then((snapshot) => {
+        if(snapshot.exists()) {
+            let currentBal = snapshot.val().balance || 0;
+            let newBal = currentBal + amount;
+            
+            // Add user balance
+            database.ref('users/' + user + '/balance').set(newBal).then(() => {
+                // Update deposit status to approved
+                database.ref('deposits/' + key + '/status').set('Approved').then(() => {
+                    // Send to main history
+                    let histData = {
+                        user: user,
+                        type: "Deposit",
+                        amount: amount,
+                        status: "Approved",
+                        timestamp: Date.now()
+                    };
+                    database.ref('history').push(histData);
+                    alert("Deposit Approved!");
+                });
+            });
+        }
+    });
+}
+
+function rejectDeposit(key) {
+    database.ref('deposits/' + key + '/status').set('Rejected').then(() => {
+        database.ref('deposits/' + key).once('value').then((snap) => {
+            let d = snap.val();
+            let histData = {
+                user: d.user,
+                type: "Deposit",
+                amount: d.amount,
+                status: "Rejected",
+                timestamp: Date.now()
+            };
+            database.ref('history').push(histData);
+            alert("Deposit Rejected!");
+        });
+    });
+}
+
+function loadAdminPackagesRequests() {
+    database.ref('pkgRequests').on('value', (snapshot) => {
+        let tbody = document.getElementById("pkgTableBody");
+        tbody.innerHTML = "";
+        if(snapshot.exists()) {
+            let requests = snapshot.val();
+            for(let key in requests) {
+                let p = requests[key];
+                if(p.status === "Pending") {
+                    tbody.innerHTML += `<tr>
+                        <td>${p.user}</td>
+                        <td>${p.target}</td>
+                        <td><b>${p.pkg}</b><br><small>Rs ${p.amt}</small></td>
+                        <td>
+                            <button onclick="approvePkg('${key}')" style="background:green; color:white; border:none; padding:5px; border-radius:3px;">Approve</button>
+                            <button onclick="rejectPkg('${key}', '${p.user}', ${p.amt})" style="background:red; color:white; border:none; padding:5px; border-radius:3px; margin-top:3px;">Reject</button>
+                        </td>
+                    </tr>`;
+                }
+            }
+        }
+    });
+}
+
+function approvePkg(key) {
+    database.ref('pkgRequests/' + key + '/status').set('Approved').then(() => {
+        database.ref('pkgRequests/' + key).once('value').then((snap) => {
+            let p = snap.val();
+            let histData = {
+                user: p.user,
+                type: "Package (Approved)",
+                amount: p.amt,
+                status: "Approved",
+                timestamp: Date.now()
+            };
+            database.ref('history').push(histData);
+            alert("Package Approved!");
+        });
+    });
+}
+
+function rejectPkg(key, user, amount) {
+    // Return money to user
+    database.ref('users/' + user).once('value').then((snapshot) => {
+        let currentBal = snapshot.val().balance || 0;
+        let refundBal = currentBal + amount;
+        
+        database.ref('users/' + user + '/balance').set(refundBal).then(() => {
+            database.ref('pkgRequests/' + key + '/status').set('Rejected').then(() => {
+                let histData = {
+                    user: user,
+                    type: "Package (Rejected)",
+                    amount: amount,
+                    status: "Rejected",
+                    timestamp: Date.now()
+                };
+                database.ref('history').push(histData);
+                alert("Package Rejected & Money Refunded!");
+            });
+        });
+    });
+}
+
+function loadAdminHistory() {
+    database.ref('history').on('value', (snapshot) => {
+        let tbody = document.getElementById("historyBody");
+        tbody.innerHTML = "";
+        if(snapshot.exists()) {
+            let hist = snapshot.val();
+            Object.values(hist).reverse().forEach(h => {
+                tbody.innerHTML += `<tr>
+                    <td>${h.user}</td>
+                    <td>${h.type}</td>
+                    <td>Rs ${h.amount}</td>
+                    <td class="status-${h.status.toLowerCase()}">${h.status}</td>
+                </tr>`;
+            });
+        }
+    });
+}
+
+// --- ADMIN PACKAGE EDITOR (Pichli baar ghaib ho gaya tha, ab 100% mehfooz aur fix hai) ---
+function loadEditor() {
+    const net = document.getElementById("editNetSelect").value;
+    const container = document.getElementById("editorPkgList");
+    container.innerHTML = "";
+    if(!all || !all[net]) return;
+    all[net].forEach((p, idx) => {
+        container.innerHTML += `<div style="border-bottom:1px solid #ccc; padding:10px 0;">
+            <b>${p.name}</b> - Rs ${p.price}<br>
+            <small>${p.desc}</small><br>
+            <button onclick="deletePackage('${net}', ${idx})" style="background:red; color:white; border:none; padding:3px 8px; border-radius:3px; margin-top:5px; font-size:11px;">Delete</button>
+        </div>`;
+    });
+}
+
+function addNewPackage() {
+    const net = document.getElementById("editNetSelect").value;
+    const name = document.getElementById("newPkgName").value.trim();
+    const price = parseInt(document.getElementById("newPkgPrice").value);
+    const desc = document.getElementById("newPkgDesc").value.trim();
+
+    if(!name || !price || !desc) return alert("Fill all package details!");
+
+    if(!all[net]) all[net] = [];
+    all[net].push({name, price, desc});
+    
+    database.ref('packages/' + net).set(all[net]).then(() => {
+        alert("Package Added Successfully!");
+        document.getElementById("newPkgName").value = "";
+        document.getElementById("newPkgPrice").value = "";
+        document.getElementById("newPkgDesc").value = "";
+        loadEditor();
+    });
+}
+
+function deletePackage(net, idx) {
+    all[net].splice(idx, 1);
+    database.ref('packages/' + net).set(all[net]).then(() => {
+        alert("Package Deleted!");
+        loadEditor();
+    });
+}
+
+// --- ADMIN LIVE NOTE SYSTEM ---
+function saveAdminNote() {
+    let noteVal = document.getElementById("adminLiveNoteInput").value.trim();
+    if (noteVal === "") return alert("Pehle koi note likhein!");
+    
+    database.ref('adminNote').set(noteVal).then(() => {
+        alert("Note live publish ho chuka hai!");
+    });
+}
+
+function deleteAdminNote() {
+    database.ref('adminNote').remove().then(() => {
+        alert("Live Note ghaib/delete kar diya gaya hai!");
+    });
+}
+
+// --- IMAGE PREVIEW UTILS ---
+function viewImg(src) {
+    document.getElementById("modalImg").src = src;
+    document.getElementById("imgModal").style.display = "block";
+}
+
+function closeImg() {
+    document.getElementById("imgModal").style.display = "none";
+}
+</script>
+</body>
+</html>
